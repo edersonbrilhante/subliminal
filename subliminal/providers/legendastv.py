@@ -356,10 +356,18 @@ class LegendasTVProvider(Provider):
                 # episode
                 if season and episode:
                     # discard mismatches on episode in non-pack archives
-                    if not archive.pack and 'episode' in guess and guess['episode'] != episode:
-                        logger.debug('Mismatched episode %s, discarding archive: %s',
-                                     guess['episode'], archive.name)
-                        continue
+
+                    # Guessit may return int for single episode or list for multi-episode
+                    # Check if archive name has multiple episodes releases on it
+                    # http://legendas.tv/download/59b88ce286178/
+                    # Fear_The_Walking_Dead/Fear_the_Walking_Dead_S03E09E10_HDTV_x264_SVA_AVS_AFG_RARBG_DEFLATE
+                    if not archive.pack and 'episode' in guess:
+                        wanted_episodes = set(episode) if isinstance(episode, list) else {episode}
+                        archive_episodes = set() if isinstance(guess['episode'], list) else {guess['episode']}
+
+                        if not wanted_episodes.intersection(archive_episodes):
+                            logger.debug('Mismatched episode %s, discarding archive: %s', guess['episode'], clean_name)
+                            continue
 
                 # extract text containing downloads, rating and timestamp
                 data_text = archive_soup.find('p', class_='data').text
